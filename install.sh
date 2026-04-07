@@ -3,7 +3,7 @@ set -euo pipefail
 
 REPO_URL="https://github.com/hipsterreed/clickup-cli"
 INSTALL_DIR="${HOME}/.clickup-cli"
-BIN_DIR="${INSTALL_DIR}/bin"
+BIN_DIR="${HOME}/.local/bin"
 BIN_PATH="${BIN_DIR}/clickup"
 MIN_NODE=18
 
@@ -80,9 +80,9 @@ else
   SHELL_PROFILE="${HOME}/.bashrc"
 fi
 
-EXPORT_LINE="export PATH=\"\$HOME/.clickup-cli/bin:\$PATH\""
+EXPORT_LINE="export PATH=\"\$HOME/.local/bin:\$PATH\""
 
-if ! grep -qF '.clickup-cli/bin' "${SHELL_PROFILE}" 2>/dev/null; then
+if ! grep -qF '.local/bin' "${SHELL_PROFILE}" 2>/dev/null; then
   echo "" >> "${SHELL_PROFILE}"
   echo "# clickup-cli" >> "${SHELL_PROFILE}"
   echo "${EXPORT_LINE}" >> "${SHELL_PROFILE}"
