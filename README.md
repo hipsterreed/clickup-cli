@@ -27,12 +27,11 @@ The `export` at the end activates `clickup` immediately in your current terminal
 ```bash
 git clone https://github.com/hipsterreed/clickup-cli
 cd clickup-cli
-npm install
-npm run build
+npm install --omit=dev
 npm link          # adds `clickup` to your PATH
 ```
 
-**Prerequisite:** Node.js 18+. During development, use `npm run dev -- <args>` instead of the built binary.
+**Prerequisite:** Node.js 18+. During development, use `npm install` (with devDependencies) and `npm run dev -- <args>` instead of the built binary.
 
 ---
 

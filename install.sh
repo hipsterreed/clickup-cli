@@ -52,10 +52,7 @@ else
 fi
 
 info "Installing dependencies..."
-npm install --silent
-
-info "Building..."
-npm run build
+npm install --omit=dev --silent
 
 # ── Create bin wrapper ────────────────────────────────────────────────────────
 
