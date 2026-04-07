@@ -8,30 +8,22 @@ A fast, beautiful terminal UI for ClickUp. Browse tasks, filter by list or assig
 
 ## Installation
 
-### macOS / Linux
+**Prerequisite:** Node.js 18+
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hipsterreed/clickup-cli/main/install.sh | bash && export PATH="$HOME/.clickup-cli/bin:$PATH"
+curl -fsSL https://raw.githubusercontent.com/hipsterreed/clickup-cli/main/install.sh | bash
 ```
 
-### Windows (PowerShell)
-
-```powershell
-irm https://raw.githubusercontent.com/hipsterreed/clickup-cli/main/install.ps1 | iex
-```
-
-The `export` at the end activates `clickup` immediately in your current terminal. Future terminals pick it up automatically via your shell profile (`~/.zshrc` or `~/.bashrc`). Re-running the command updates an existing installation.
+That's it. The script clones the repo, installs dependencies, and adds `clickup` to your PATH. Re-running the command updates an existing installation.
 
 ### Manual install
 
 ```bash
 git clone https://github.com/hipsterreed/clickup-cli
 cd clickup-cli
-npm install --omit=dev
-npm link          # adds `clickup` to your PATH
+npm install --omit=dev --legacy-peer-deps
+npm link
 ```
-
-**Prerequisite:** Node.js 18+. During development, use `npm install` (with devDependencies) and `npm run dev -- <args>` instead of the built binary.
 
 ---
 
