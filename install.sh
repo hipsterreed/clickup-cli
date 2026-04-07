@@ -55,18 +55,18 @@ info "Installing dependencies..."
 npm install --silent
 
 info "Building..."
-npm run build --silent
+npm run build
 
 # ── Create bin wrapper ────────────────────────────────────────────────────────
 
 mkdir -p "${BIN_DIR}"
 
-cat > "${BIN_PATH}" <<EOF
-#!/usr/bin/env bash
-exec node "${INSTALL_DIR}/dist/bin/clickup.js" "\$@"
-EOF
+ENTRY="${INSTALL_DIR}/dist/bin/clickup.js"
+chmod +x "${ENTRY}"
 
+printf '#!/usr/bin/env bash\nexec node "%s" "$@"\n' "${ENTRY}" > "${BIN_PATH}"
 chmod +x "${BIN_PATH}"
+
 success "Binary ready at ${BIN_PATH}"
 
 # ── Shell profile PATH setup ──────────────────────────────────────────────────
