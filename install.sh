@@ -9,23 +9,22 @@ MIN_NODE=18
 
 CYAN='\033[0;36m'
 GREEN='\033[0;32m'
-RED='\033[0;31m'
 YELLOW='\033[1;33m'
+BOLD='\033[1m'
 RESET='\033[0m'
 
 info()    { echo -e "${CYAN}→${RESET} $*"; }
 success() { echo -e "${GREEN}✓${RESET} $*"; }
 warn()    { echo -e "${YELLOW}!${RESET} $*"; }
-error()   { echo -e "${RED}✗${RESET} $*" >&2; exit 1; }
+error()   { echo -e "\033[0;31m✗${RESET} $*" >&2; exit 1; }
 
 # ── Checks ───────────────────────────────────────────────────────────────────
 
 echo ""
-echo -e "${CYAN}  ClickUp CLI Installer${RESET}"
+echo -e "${CYAN}${BOLD}  ClickUp CLI Installer${RESET}"
 echo "  ─────────────────────────────────"
 echo ""
 
-# Node.js
 if ! command -v node &>/dev/null; then
   error "Node.js is not installed. Install it from https://nodejs.org (v${MIN_NODE}+ required)."
 fi
@@ -36,12 +35,10 @@ if [[ "${NODE_VERSION}" -lt "${MIN_NODE}" ]]; then
 fi
 success "Node.js v$(node --version) detected"
 
-# npm
 if ! command -v npm &>/dev/null; then
   error "npm is not installed. It should come with Node.js."
 fi
 
-# git
 if ! command -v git &>/dev/null; then
   error "git is not installed. Install it from https://git-scm.com"
 fi
@@ -64,63 +61,50 @@ npm install --silent
 info "Building..."
 npm run build --silent
 
-info "Linking..."
-npm link --silent 2>/dev/null || true
+# Make the binary executable
+chmod +x "${INSTALL_DIR}/dist/bin/clickup.js"
 
-# ── Ensure `clickup` is on PATH ───────────────────────────────────────────────
+# ── PATH setup ────────────────────────────────────────────────────────────────
 
-# Find where npm puts global binaries
-NPM_BIN="$(npm bin -g 2>/dev/null || npm prefix -g)/bin"
+NPM_BIN="$(npm prefix -g)/bin"
+EXPORT_LINE="export PATH=\"${NPM_BIN}:\$PATH\""
 
-if command -v clickup &>/dev/null; then
-  success "clickup command available at $(command -v clickup)"
-else
-  # npm bin dir not in PATH — symlink directly to /usr/local/bin
-  SYMLINK_TARGET="/usr/local/bin/clickup"
-  BIN_SOURCE="${INSTALL_DIR}/dist/bin/clickup.js"
-
-  # Make the JS file executable
-  chmod +x "${BIN_SOURCE}"
-
-  if [[ -w "/usr/local/bin" ]]; then
-    ln -sf "${BIN_SOURCE}" "${SYMLINK_TARGET}"
-    success "clickup linked to ${SYMLINK_TARGET}"
+# Detect shell profile
+if [[ -n "${ZSH_VERSION:-}" ]] || [[ "${SHELL}" == */zsh ]]; then
+  SHELL_PROFILE="${HOME}/.zshrc"
+elif [[ -n "${BASH_VERSION:-}" ]] || [[ "${SHELL}" == */bash ]]; then
+  if [[ -f "${HOME}/.bash_profile" ]]; then
+    SHELL_PROFILE="${HOME}/.bash_profile"
   else
-    # Try with sudo
-    warn "Need sudo to write to /usr/local/bin"
-    sudo ln -sf "${BIN_SOURCE}" "${SYMLINK_TARGET}" && \
-      success "clickup linked to ${SYMLINK_TARGET}" || \
-      {
-        # Last resort: add npm bin to shell profile
-        warn "Could not symlink. Adding npm bin dir to your shell profile..."
-        SHELL_PROFILE=""
-        if [[ -f "${HOME}/.zshrc" ]]; then
-          SHELL_PROFILE="${HOME}/.zshrc"
-        elif [[ -f "${HOME}/.bashrc" ]]; then
-          SHELL_PROFILE="${HOME}/.bashrc"
-        elif [[ -f "${HOME}/.bash_profile" ]]; then
-          SHELL_PROFILE="${HOME}/.bash_profile"
-        fi
-
-        if [[ -n "${SHELL_PROFILE}" ]]; then
-          echo "" >> "${SHELL_PROFILE}"
-          echo "# clickup-cli" >> "${SHELL_PROFILE}"
-          echo "export PATH=\"${NPM_BIN}:\$PATH\"" >> "${SHELL_PROFILE}"
-          warn "Added ${NPM_BIN} to ${SHELL_PROFILE}"
-          warn "Run: source ${SHELL_PROFILE}  (or open a new terminal)"
-        else
-          warn "Add this to your shell profile manually:"
-          echo ""
-          echo "  export PATH=\"${NPM_BIN}:\$PATH\""
-          echo ""
-        fi
-      }
+    SHELL_PROFILE="${HOME}/.bashrc"
   fi
+else
+  SHELL_PROFILE="${HOME}/.profile"
 fi
 
+info "Linking to PATH..."
+npm link --silent 2>/dev/null || true
+
+# Always ensure the PATH export is in the profile (idempotent)
+if ! grep -qF "${NPM_BIN}" "${SHELL_PROFILE}" 2>/dev/null; then
+  echo "" >> "${SHELL_PROFILE}"
+  echo "# clickup-cli" >> "${SHELL_PROFILE}"
+  echo "${EXPORT_LINE}" >> "${SHELL_PROFILE}"
+fi
+
+# Apply to current session too
+export PATH="${NPM_BIN}:${PATH}"
+
+# ── Done ──────────────────────────────────────────────────────────────────────
+
 echo ""
-success "ClickUp CLI installed successfully!"
+echo -e "${GREEN}${BOLD}  ✓ ClickUp CLI installed!${RESET}"
 echo ""
-echo -e "  Run ${CYAN}clickup setup${RESET} to get started."
-echo -e "  Run ${CYAN}clickup help${RESET} for a full command reference."
+echo -e "  To start using it, run:"
+echo ""
+echo -e "  ${BOLD}source ${SHELL_PROFILE}${RESET}"
+echo ""
+echo -e "  Then:"
+echo -e "  ${CYAN}clickup setup${RESET}   — connect your ClickUp account"
+echo -e "  ${CYAN}clickup help${RESET}    — see all commands"
 echo ""
