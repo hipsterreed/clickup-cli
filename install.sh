@@ -3,19 +3,19 @@ set -euo pipefail
 
 REPO_URL="https://github.com/hipsterreed/clickup-cli"
 INSTALL_DIR="${HOME}/.clickup-cli"
+BIN_DIR="${INSTALL_DIR}/bin"
+BIN_PATH="${BIN_DIR}/clickup"
 MIN_NODE=18
 
 # ── Colors ───────────────────────────────────────────────────────────────────
 
 CYAN='\033[0;36m'
 GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
 info()    { echo -e "${CYAN}→${RESET} $*"; }
 success() { echo -e "${GREEN}✓${RESET} $*"; }
-warn()    { echo -e "${YELLOW}!${RESET} $*"; }
 error()   { echo -e "\033[0;31m✗${RESET} $*" >&2; exit 1; }
 
 # ── Checks ───────────────────────────────────────────────────────────────────
@@ -35,22 +35,18 @@ if [[ "${NODE_VERSION}" -lt "${MIN_NODE}" ]]; then
 fi
 success "Node.js v$(node --version) detected"
 
-if ! command -v npm &>/dev/null; then
-  error "npm is not installed. It should come with Node.js."
-fi
-
 if ! command -v git &>/dev/null; then
   error "git is not installed. Install it from https://git-scm.com"
 fi
 
-# ── Install ───────────────────────────────────────────────────────────────────
+# ── Clone or update ───────────────────────────────────────────────────────────
 
-if [[ -d "${INSTALL_DIR}" ]]; then
-  info "Updating existing installation at ${INSTALL_DIR}..."
+if [[ -d "${INSTALL_DIR}/.git" ]]; then
+  info "Updating existing installation..."
   cd "${INSTALL_DIR}"
   git pull --ff-only
 else
-  info "Cloning to ${INSTALL_DIR}..."
+  info "Installing to ${INSTALL_DIR}..."
   git clone "${REPO_URL}" "${INSTALL_DIR}"
   cd "${INSTALL_DIR}"
 fi
@@ -61,50 +57,50 @@ npm install --silent
 info "Building..."
 npm run build --silent
 
-# Make the binary executable
-chmod +x "${INSTALL_DIR}/dist/bin/clickup.js"
+# ── Create bin wrapper ────────────────────────────────────────────────────────
 
-# ── PATH setup ────────────────────────────────────────────────────────────────
+mkdir -p "${BIN_DIR}"
 
-NPM_BIN="$(npm prefix -g)/bin"
-EXPORT_LINE="export PATH=\"${NPM_BIN}:\$PATH\""
+cat > "${BIN_PATH}" <<EOF
+#!/usr/bin/env bash
+exec node "${INSTALL_DIR}/dist/bin/clickup.js" "\$@"
+EOF
+
+chmod +x "${BIN_PATH}"
+success "Binary ready at ${BIN_PATH}"
+
+# ── Shell profile PATH setup ──────────────────────────────────────────────────
 
 # Detect shell profile
-if [[ -n "${ZSH_VERSION:-}" ]] || [[ "${SHELL}" == */zsh ]]; then
+if [[ "${SHELL}" == */zsh ]]; then
   SHELL_PROFILE="${HOME}/.zshrc"
-elif [[ -n "${BASH_VERSION:-}" ]] || [[ "${SHELL}" == */bash ]]; then
-  if [[ -f "${HOME}/.bash_profile" ]]; then
-    SHELL_PROFILE="${HOME}/.bash_profile"
-  else
-    SHELL_PROFILE="${HOME}/.bashrc"
-  fi
+elif [[ -f "${HOME}/.bash_profile" ]]; then
+  SHELL_PROFILE="${HOME}/.bash_profile"
 else
-  SHELL_PROFILE="${HOME}/.profile"
+  SHELL_PROFILE="${HOME}/.bashrc"
 fi
 
-info "Linking to PATH..."
-npm link --silent 2>/dev/null || true
+EXPORT_LINE="export PATH=\"\$HOME/.clickup-cli/bin:\$PATH\""
 
-# Always ensure the PATH export is in the profile (idempotent)
-if ! grep -qF "${NPM_BIN}" "${SHELL_PROFILE}" 2>/dev/null; then
+if ! grep -qF '.clickup-cli/bin' "${SHELL_PROFILE}" 2>/dev/null; then
   echo "" >> "${SHELL_PROFILE}"
   echo "# clickup-cli" >> "${SHELL_PROFILE}"
   echo "${EXPORT_LINE}" >> "${SHELL_PROFILE}"
 fi
 
-# Apply to current session too
-export PATH="${NPM_BIN}:${PATH}"
+# Apply to current session
+export PATH="${BIN_DIR}:${PATH}"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
 echo ""
-echo -e "${GREEN}${BOLD}  ✓ ClickUp CLI installed!${RESET}"
+echo -e "${GREEN}${BOLD}  ✓ ClickUp CLI installed successfully!${RESET}"
 echo ""
-echo -e "  To start using it, run:"
+echo -e "  Run this to start using it:"
 echo ""
-echo -e "  ${BOLD}source ${SHELL_PROFILE}${RESET}"
+echo -e "  ${BOLD}export PATH=\"\$HOME/.clickup-cli/bin:\$PATH\"${RESET}"
 echo ""
-echo -e "  Then:"
+echo -e "  Or open a new terminal, then:"
 echo -e "  ${CYAN}clickup setup${RESET}   — connect your ClickUp account"
 echo -e "  ${CYAN}clickup help${RESET}    — see all commands"
 echo ""
