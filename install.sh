@@ -64,8 +64,59 @@ npm install --silent
 info "Building..."
 npm run build --silent
 
-info "Linking to PATH..."
-npm link --silent
+info "Linking..."
+npm link --silent 2>/dev/null || true
+
+# ── Ensure `clickup` is on PATH ───────────────────────────────────────────────
+
+# Find where npm puts global binaries
+NPM_BIN="$(npm bin -g 2>/dev/null || npm prefix -g)/bin"
+
+if command -v clickup &>/dev/null; then
+  success "clickup command available at $(command -v clickup)"
+else
+  # npm bin dir not in PATH — symlink directly to /usr/local/bin
+  SYMLINK_TARGET="/usr/local/bin/clickup"
+  BIN_SOURCE="${INSTALL_DIR}/dist/bin/clickup.js"
+
+  # Make the JS file executable
+  chmod +x "${BIN_SOURCE}"
+
+  if [[ -w "/usr/local/bin" ]]; then
+    ln -sf "${BIN_SOURCE}" "${SYMLINK_TARGET}"
+    success "clickup linked to ${SYMLINK_TARGET}"
+  else
+    # Try with sudo
+    warn "Need sudo to write to /usr/local/bin"
+    sudo ln -sf "${BIN_SOURCE}" "${SYMLINK_TARGET}" && \
+      success "clickup linked to ${SYMLINK_TARGET}" || \
+      {
+        # Last resort: add npm bin to shell profile
+        warn "Could not symlink. Adding npm bin dir to your shell profile..."
+        SHELL_PROFILE=""
+        if [[ -f "${HOME}/.zshrc" ]]; then
+          SHELL_PROFILE="${HOME}/.zshrc"
+        elif [[ -f "${HOME}/.bashrc" ]]; then
+          SHELL_PROFILE="${HOME}/.bashrc"
+        elif [[ -f "${HOME}/.bash_profile" ]]; then
+          SHELL_PROFILE="${HOME}/.bash_profile"
+        fi
+
+        if [[ -n "${SHELL_PROFILE}" ]]; then
+          echo "" >> "${SHELL_PROFILE}"
+          echo "# clickup-cli" >> "${SHELL_PROFILE}"
+          echo "export PATH=\"${NPM_BIN}:\$PATH\"" >> "${SHELL_PROFILE}"
+          warn "Added ${NPM_BIN} to ${SHELL_PROFILE}"
+          warn "Run: source ${SHELL_PROFILE}  (or open a new terminal)"
+        else
+          warn "Add this to your shell profile manually:"
+          echo ""
+          echo "  export PATH=\"${NPM_BIN}:\$PATH\""
+          echo ""
+        fi
+      }
+  fi
+fi
 
 echo ""
 success "ClickUp CLI installed successfully!"
