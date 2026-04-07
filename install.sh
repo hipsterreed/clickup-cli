@@ -52,7 +52,7 @@ else
 fi
 
 info "Installing dependencies..."
-npm install --omit=dev --silent
+npm install --omit=dev --legacy-peer-deps --silent
 
 # ── Create bin wrapper ────────────────────────────────────────────────────────
 
