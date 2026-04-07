@@ -11,7 +11,7 @@ A fast, beautiful terminal UI for ClickUp. Browse tasks, filter by list or assig
 ### macOS / Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hipsterreed/clickup-cli/main/install.sh | bash && export PATH="$HOME/.local/bin:$PATH"
+curl -fsSL https://raw.githubusercontent.com/hipsterreed/clickup-cli/main/install.sh | bash && export PATH="$HOME/.clickup-cli/bin:$PATH"
 ```
 
 ### Windows (PowerShell)
