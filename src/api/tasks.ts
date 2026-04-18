@@ -43,9 +43,10 @@ export async function getListTasks(
   filters: TaskFilters,
 ): Promise<ClickUpTask[]> {
   const client = createClient();
-  const { userId } = getConfig();
+  const { teamId, userId } = getConfig();
 
   const params: Record<string, unknown> = {
+    'list_ids[]': [listId],
     include_closed: filters.includeClosed ?? false,
     subtasks: filters.subtasks ?? false,
     order_by: filters.orderBy ?? 'updated',
@@ -66,7 +67,7 @@ export async function getListTasks(
   }
 
   const res = await client.get<{ tasks: ClickUpTask[] }>(
-    `/list/${listId}/task`,
+    `/team/${teamId}/task`,
     { params },
   );
 

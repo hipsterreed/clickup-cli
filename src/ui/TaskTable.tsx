@@ -1,8 +1,8 @@
 import { Box, Text, useInput } from 'ink';
 import { useState, useEffect } from 'react';
 import type { ClickUpTask } from '../types/clickup.js';
-import { truncate, formatDateShort } from '../utils/format.js';
-import { statusDot, priorityLabelFromId, priorityColorInk } from './colors.js';
+import { truncate } from '../utils/format.js';
+import { statusDot } from './colors.js';
 import { getConfig } from '../config/config.js';
 
 interface Props {
@@ -16,8 +16,7 @@ interface Props {
 
 const COL_TITLE = 28;
 const COL_STATUS = 13;
-const COL_PRI = 7;
-const COL_DUE = 7;
+const COL_ASSIGNEE = 14;
 
 export default function TaskTable({
   tasks,
@@ -70,9 +69,7 @@ export default function TaskTable({
           {' '}
           {'STATUS'.padEnd(COL_STATUS)}
           {' '}
-          {'PRI'.padEnd(COL_PRI)}
-          {' '}
-          {'DUE'.padEnd(COL_DUE)}
+          {'ASSIGNEE'.padEnd(COL_ASSIGNEE)}
         </Text>
       </Box>
 
@@ -81,13 +78,10 @@ export default function TaskTable({
         const absIdx = scrollOffset + i;
         const isSelected = absIdx === selectedIndex;
         const isMe = task.assignees.some((a) => a.id === userId);
-        const priId = task.priority?.id;
-        const priLabel = priorityLabelFromId(priId);
-        const priColors = priorityColorInk(priId);
         const dot = statusDot(task.status.status, task.status.color);
-        const dueStr = formatDateShort(task.due_date);
-        const isOverdue = task.due_date && parseInt(task.due_date) < Date.now();
         const title = truncate(task.name, COL_TITLE);
+        const assigneeNames = task.assignees.map((a) => a.username).join(', ');
+        const assigneeStr = truncate(assigneeNames || '—', COL_ASSIGNEE);
 
         return (
           <Box key={task.id}>
@@ -109,15 +103,9 @@ export default function TaskTable({
               </Text>
             </Box>
             <Text> </Text>
-            <Box width={COL_PRI}>
-              <Text color={priColors.color as Parameters<typeof Text>[0]['color']} wrap="truncate">
-                {truncate(priLabel, COL_PRI).padEnd(COL_PRI)}
-              </Text>
-            </Box>
-            <Text> </Text>
-            <Box width={COL_DUE}>
-              <Text color={isOverdue ? 'red' : 'gray'} dimColor={!isOverdue} wrap="truncate">
-                {dueStr.padEnd(COL_DUE)}
+            <Box width={COL_ASSIGNEE}>
+              <Text color={isMe ? 'cyan' : 'gray'} dimColor={!isMe && !isSelected} wrap="truncate">
+                {assigneeStr.padEnd(COL_ASSIGNEE)}
               </Text>
             </Box>
           </Box>
