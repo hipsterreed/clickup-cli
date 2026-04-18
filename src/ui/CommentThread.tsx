@@ -16,7 +16,7 @@ export default function CommentThread({ comments, maxHeight }: Props) {
     return (
       <Box flexDirection="column">
         <Text bold>Comments</Text>
-        <Text color="gray" dimColor>  No comments yet.</Text>
+        <Text color="gray">  No comments yet.</Text>
       </Box>
     );
   }

@@ -59,7 +59,7 @@ export default function CommentInput({ onSubmit, onCancel }: Props) {
               placeholder="Type your comment and press Enter..."
             />
           </Box>
-          <Text color="gray" dimColor>enter to preview  ·  esc cancel</Text>
+          <Text color="gray">enter to preview  ·  esc cancel</Text>
         </>
       ) : (
         <>

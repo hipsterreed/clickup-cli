@@ -63,7 +63,7 @@ export default function TaskTable({
     <Box flexDirection="column">
       {/* Column header — always 1 row */}
       <Box>
-        <Text color="gray" dimColor>
+        <Text color="gray">
           {'  '}
           {'TITLE'.padEnd(COL_TITLE)}
           {' '}
@@ -97,14 +97,14 @@ export default function TaskTable({
             <Box width={COL_STATUS}>
               <Text wrap="truncate">
                 {dot}{' '}
-                <Text color="white" dimColor={!isSelected}>
+                <Text color="white">
                   {truncate(task.status.status, COL_STATUS - 2).padEnd(COL_STATUS - 2)}
                 </Text>
               </Text>
             </Box>
             <Text> </Text>
             <Box width={COL_ASSIGNEE}>
-              <Text color={isMe ? 'cyan' : 'gray'} dimColor={!isMe && !isSelected} wrap="truncate">
+              <Text color={isMe ? 'cyan' : 'gray'} wrap="truncate">
                 {assigneeStr.padEnd(COL_ASSIGNEE)}
               </Text>
             </Box>
@@ -122,11 +122,11 @@ export default function TaskTable({
       {/* Scroll indicator — always 1 row */}
       <Box>
         {tasks.length > height ? (
-          <Text color="gray" dimColor>
+          <Text color="gray">
             {'  '}{scrollOffset + 1}–{Math.min(scrollOffset + height, tasks.length)} of {tasks.length}
           </Text>
         ) : (
-          <Text color="gray" dimColor>
+          <Text color="gray">
             {'  '}{tasks.length} task{tasks.length !== 1 ? 's' : ''}
           </Text>
         )}

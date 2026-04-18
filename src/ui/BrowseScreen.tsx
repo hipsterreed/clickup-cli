@@ -120,7 +120,7 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
           if (item.type === 'separator') {
             return (
               <Box key={`sep-${i}`} marginY={1}>
-                <Text color="gray" dimColor>{'  ────── Lists ──────'}</Text>
+                <Text color="gray">{'  ────── Lists ──────'}</Text>
               </Box>
             );
           }
@@ -135,7 +135,7 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
                 {item.label}
               </Text>
               {item.sublabel && (
-                <Text color="gray" dimColor>
+                <Text color="gray">
                   {'  '}{item.sublabel}
                 </Text>
               )}
@@ -152,7 +152,7 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
 
       {/* Footer */}
       <Box marginTop={1} paddingX={1}>
-        <Text color="gray" dimColor>↑↓ navigate  ·  enter select  ·  q quit</Text>
+        <Text color="gray">↑↓ navigate  ·  enter select  ·  q quit</Text>
       </Box>
     </Box>
   );

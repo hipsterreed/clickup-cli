@@ -139,7 +139,7 @@ export default function FilterPanel({ filters, lists, onApply, onCancel }: Props
       paddingY={1}
     >
       <Text bold color="cyan">Filters</Text>
-      <Text color="gray" dimColor>↑↓ navigate  ·  space/enter toggle  ·  esc cancel</Text>
+      <Text color="gray">↑↓ navigate  ·  space/enter toggle  ·  esc cancel</Text>
       <Text> </Text>
 
       {/* Scope */}
@@ -162,7 +162,7 @@ export default function FilterPanel({ filters, lists, onApply, onCancel }: Props
             {selectedList ? selectedList.name : 'No lists found'}
           </Text>
           {lists.length > 1 && (
-            <Text color="gray" dimColor>  ← → to change</Text>
+            <Text color="gray">  ← → to change</Text>
           )}
         </Box>
       )}
@@ -170,7 +170,7 @@ export default function FilterPanel({ filters, lists, onApply, onCancel }: Props
       <Text> </Text>
 
       {/* Status checkboxes */}
-      <Text color="gray" dimColor>  Status</Text>
+      <Text color="gray">  Status</Text>
       {(
         [
           ['status_todo', 'to do', 'to do'],
@@ -192,7 +192,7 @@ export default function FilterPanel({ filters, lists, onApply, onCancel }: Props
       <Text> </Text>
 
       {/* Priority checkboxes */}
-      <Text color="gray" dimColor>  Priority</Text>
+      <Text color="gray">  Priority</Text>
       {(
         [
           ['priority_urgent', 'urgent', '1'],

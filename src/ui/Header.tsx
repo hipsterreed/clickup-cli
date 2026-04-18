@@ -36,7 +36,7 @@ export default function Header({ subtitle, animate = true }: Props) {
         <Text key={i}>{clickupGradient(line.slice(0, revealed))}</Text>
       ))}
       {subtitle && (
-        <Text color="gray" dimColor>
+        <Text color="gray">
           {'  '}{subtitle}
         </Text>
       )}

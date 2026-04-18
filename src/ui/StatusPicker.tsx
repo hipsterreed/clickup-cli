@@ -74,14 +74,14 @@ export default function StatusPicker({
               ● {s.status}
             </Text>
             {isCurrent && (
-              <Text color="gray" dimColor>  ← current</Text>
+              <Text color="gray">  ← current</Text>
             )}
           </Box>
         );
       })}
 
       <Box marginTop={1}>
-        <Text color="gray" dimColor>enter confirm  ·  esc cancel</Text>
+        <Text color="gray">enter confirm  ·  esc cancel</Text>
       </Box>
     </Box>
   );

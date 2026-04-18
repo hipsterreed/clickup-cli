@@ -21,7 +21,7 @@ export default function TaskDetail({ task, compact = false, comments, loadingCom
   if (!task) {
     return (
       <Box flexDirection="column" paddingX={1} paddingY={1}>
-        <Text color="gray" dimColor>Select a task to view details</Text>
+        <Text color="gray">Select a task to view details</Text>
       </Box>
     );
   }
@@ -95,14 +95,14 @@ export default function TaskDetail({ task, compact = false, comments, loadingCom
             {descDisplay}
           </Text>
         ) : (
-          <Text color="gray" dimColor>No description.</Text>
+          <Text color="gray">No description.</Text>
         )}
       </Box>
 
       {/* In compact (split) mode: show hint instead of comments */}
       {compact && (
         <Box>
-          <Text color="gray" dimColor>enter to expand  ·  c to comment  ·  s to change status</Text>
+          <Text color="gray">enter to expand  ·  c to comment  ·  s to change status</Text>
         </Box>
       )}
 
@@ -110,7 +110,7 @@ export default function TaskDetail({ task, compact = false, comments, loadingCom
       {!compact && (
         <Box flexDirection="column">
           {loadingComments ? (
-            <Text color="gray" dimColor>Loading comments...</Text>
+            <Text color="gray">Loading comments...</Text>
           ) : comments !== undefined ? (
             <CommentThread comments={comments} />
           ) : null}

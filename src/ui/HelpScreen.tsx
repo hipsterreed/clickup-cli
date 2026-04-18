@@ -119,7 +119,7 @@ export default function HelpScreen({ onClose }: Props) {
       </Box>
 
       <Box marginTop={1}>
-        <Text color="gray" dimColor>Press any key to close</Text>
+        <Text color="gray">Press any key to close</Text>
       </Box>
     </Box>
   );

@@ -177,8 +177,8 @@ export default function CreateTaskForm({
       {/* Header */}
       <Box marginBottom={1} flexDirection="column">
         <Text bold color="cyan">Create Task</Text>
-        <Text color="gray" dimColor>List: {listName}</Text>
-        <Text color="gray" dimColor>↑↓ navigate  ·  enter edit/confirm  ·  ←→ cycle options  ·  esc cancel</Text>
+        <Text color="gray">List: {listName}</Text>
+        <Text color="gray">↑↓ navigate  ·  enter edit/confirm  ·  ←→ cycle options  ·  esc cancel</Text>
       </Box>
 
       {/* Name */}
@@ -188,7 +188,7 @@ export default function CreateTaskForm({
         {editing === 'name' ? (
           <TextInput value={name} onChange={setName} onSubmit={() => { setEditing(null); setFieldIdx(1); }} placeholder="Task name..." />
         ) : (
-          <Text color={name ? 'white' : 'gray'} dimColor={!name}>
+          <Text color={name ? 'white' : 'gray'}>
             {name || '(required — press enter to edit)'}
           </Text>
         )}
@@ -201,7 +201,7 @@ export default function CreateTaskForm({
         {editing === 'description' ? (
           <TextInput value={description} onChange={setDescription} onSubmit={() => { setEditing(null); setFieldIdx(2); }} placeholder="Optional description..." />
         ) : (
-          <Text color={description ? 'white' : 'gray'} dimColor={!description}>
+          <Text color={description ? 'white' : 'gray'}>
             {description || '(optional)'}
           </Text>
         )}
@@ -258,7 +258,7 @@ export default function CreateTaskForm({
           />
         ) : (
           <Box>
-            <Text color={dueDate ? 'white' : 'gray'} dimColor={!dueDate}>
+            <Text color={dueDate ? 'white' : 'gray'}>
               {dueDate || '(optional)'}
             </Text>
             {dueDateError && <Text color="red">  {dueDateError}</Text>}

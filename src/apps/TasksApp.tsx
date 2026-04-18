@@ -335,7 +335,7 @@ export default function TasksApp({ initialFilters }: Props) {
       {/* Title bar */}
       <Box borderStyle="round" borderColor="cyan" paddingX={1}>
         <Text bold color="cyan">{titleLeft}</Text>
-        <Text color="gray" dimColor>{'  ·  '}{titleRight}</Text>
+        <Text color="gray">{'  ·  '}{titleRight}</Text>
       </Box>
 
       {/* Notice */}
@@ -363,7 +363,7 @@ export default function TasksApp({ initialFilters }: Props) {
       {mode === 'error' && (
         <Box flexDirection="column" paddingX={2} paddingY={1}>
           <Text color="red">✗ {error}</Text>
-          <Text color="gray" dimColor>Press Enter to retry  ·  q to quit</Text>
+          <Text color="gray">Press Enter to retry  ·  q to quit</Text>
         </Box>
       )}
 
@@ -478,7 +478,7 @@ export default function TasksApp({ initialFilters }: Props) {
       {/* Footer hint for split */}
       {mode === 'split' && (
         <Box paddingX={1}>
-          <Text color="gray" dimColor>
+          <Text color="gray">
             ↑↓ navigate  ·  enter expand  ·  n new  ·  s status  ·  c comment  ·  f filter  ·  b back  ·  ? help  ·  q quit
           </Text>
         </Box>
