@@ -26,6 +26,7 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
     { type: 'scope', label: 'All Team Tasks', filters: {} },
   ]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
         }
 
         if (!cancelled) {
+          allLists.sort((a, b) => (a.list.orderindex ?? 0) - (b.list.orderindex ?? 0));
           const listItems: BrowseItem[] = allLists.map(({ list, spaceName }) => ({
             type: 'list' as const,
             label: list.name,
@@ -73,59 +75,50 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
     return () => { cancelled = true; };
   }, [teamId]);
 
-  // Selectable items only (skip separators)
-  const selectableItems = items.filter((i) => i.type !== 'separator');
-  const selectableIdx = Math.min(idx, selectableItems.length - 1);
+  const q = query.toLowerCase();
+  const filtered = items.filter((item) => {
+    if (item.type === 'separator') return false;
+    if (!q) return true;
+    return item.label.toLowerCase().includes(q) || item.sublabel?.toLowerCase().includes(q);
+  });
+
+  const visibleIdx = Math.min(idx, filtered.length - 1);
 
   useInput((input, key) => {
-    if (input === 'q') { onQuit(); return; }
+    if (key.escape) { onQuit(); return; }
 
     if (key.upArrow) {
-      setIdx((i) => {
-        let next = i - 1;
-        while (next >= 0 && items[next]?.type === 'separator') next--;
-        return Math.max(0, next);
-      });
+      setIdx((i) => Math.max(0, i - 1));
     } else if (key.downArrow) {
-      setIdx((i) => {
-        let next = i + 1;
-        while (next < items.length && items[next]?.type === 'separator') next++;
-        return Math.min(items.length - 1, next);
-      });
+      setIdx((i) => Math.min(filtered.length - 1, i + 1));
     } else if (key.return) {
-      const item = items[idx];
-      if (item && item.type !== 'separator' && item.filters) {
-        onSelect(item.filters, item.label);
-      }
+      const item = filtered[visibleIdx];
+      if (item?.filters) onSelect(item.filters, item.label);
+    } else if (key.backspace || key.delete) {
+      setQuery((q) => q.slice(0, -1));
+      setIdx(0);
+    } else if (input && !key.ctrl && !key.meta) {
+      setQuery((q) => q + input);
+      setIdx(0);
     }
   });
 
   return (
     <Box flexDirection="column">
-      {/* Title */}
-      <Box
-        borderStyle="round"
-        borderColor="cyan"
-        paddingX={2}
-        paddingY={0}
-        marginBottom={1}
-      >
+      {/* Title / search bar */}
+      <Box borderStyle="round" borderColor="cyan" paddingX={2} paddingY={0} marginBottom={1}>
         <Text bold color="cyan">ClickUp CLI</Text>
-        <Text color="gray">  ·  Browse Tasks</Text>
+        <Text color="gray">  ·  </Text>
+        {query
+          ? <Text color="white">{query}</Text>
+          : <Text color="gray">type to filter lists  ·  esc quit</Text>
+        }
       </Box>
 
       {/* List */}
       <Box flexDirection="column" paddingX={1}>
-        {items.map((item, i) => {
-          if (item.type === 'separator') {
-            return (
-              <Box key={`sep-${i}`} marginY={1}>
-                <Text color="gray">{'  ────── Lists ──────'}</Text>
-              </Box>
-            );
-          }
-
-          const isSelected = i === idx;
+        {filtered.map((item, i) => {
+          const isSelected = i === visibleIdx;
           return (
             <Box key={`${item.type}-${item.label}-${i}`}>
               <Text color={isSelected ? 'cyan' : 'gray'} bold={isSelected}>
@@ -148,11 +141,17 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
             <Spinner message="Loading lists..." />
           </Box>
         )}
+
+        {!loading && filtered.length === 0 && (
+          <Box paddingLeft={2}>
+            <Text color="gray">No matches</Text>
+          </Box>
+        )}
       </Box>
 
       {/* Footer */}
       <Box marginTop={1} paddingX={1}>
-        <Text color="gray">↑↓ navigate  ·  enter select  ·  q quit</Text>
+        <Text color="gray">↑↓ navigate  ·  enter select  ·  backspace clear  ·  esc quit</Text>
       </Box>
     </Box>
   );

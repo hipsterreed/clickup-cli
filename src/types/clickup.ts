@@ -54,6 +54,8 @@ export interface ClickUpList {
   folder?: { id: string; name: string; hidden: boolean };
   space: { id: string; name: string };
   task_count?: number;
+  date_updated?: string;
+  orderindex?: number;
 }
 
 export interface ClickUpFolder {
