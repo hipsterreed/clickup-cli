@@ -391,7 +391,8 @@ export default function TasksApp({ initialFilters }: Props) {
           {/* Left: task list */}
           <Box
             flexDirection="column"
-            width="40%"
+            width={71}
+            flexShrink={0}
             borderStyle="round"
             borderColor="gray"
             paddingX={1}
