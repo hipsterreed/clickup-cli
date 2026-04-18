@@ -178,6 +178,10 @@ export default function TasksApp({ initialFilters }: Props) {
       } else if (input === 'f') {
         fetchFilterData(); // lazy-load filter data
         setMode('filter');
+      } else if (input === 'm') {
+        const next = { ...filters, me: !filters.me };
+        setFilters(next);
+        fetchTasks(next);
       } else if (input === 'r') {
         fetchTasks(filters);
       } else if (key.escape || input === 'b') {
@@ -310,13 +314,14 @@ export default function TasksApp({ initialFilters }: Props) {
   // Title bar content
   const canCreate = !!filters.listId;
   const titleRight = mode === 'split'
-    ? `b:back  f:filter${canCreate ? '  n:new' : ''}  r:refresh  q:quit`
+    ? `m:${filters.me ? 'all' : 'mine'}  b:back  f:filter${canCreate ? '  n:new' : ''}  r:refresh  q:quit`
     : mode === 'fullscreen'
       ? 'esc:back  s:status  c:comment  q:quit'
       : 'q:quit';
 
+  const meLabel = filters.me ? ' · me' : '';
   const titleLeft = mode === 'split' || mode === 'fullscreen'
-    ? `ClickUp · ${scopeLabel} · ${tasks.length} task${tasks.length !== 1 ? 's' : ''}`
+    ? `ClickUp · ${scopeLabel}${meLabel} · ${tasks.length} task${tasks.length !== 1 ? 's' : ''}`
     : 'ClickUp CLI';
 
   // ── Browse mode ───────────────────────────────────────────────────────────
@@ -479,7 +484,7 @@ export default function TasksApp({ initialFilters }: Props) {
       {mode === 'split' && (
         <Box paddingX={1}>
           <Text color="gray">
-            ↑↓ navigate  ·  enter expand  ·  n new  ·  s status  ·  c comment  ·  f filter  ·  b back  ·  ? help  ·  q quit
+            ↑↓ navigate  ·  enter expand  ·  m mine  ·  n new  ·  s status  ·  c comment  ·  f filter  ·  b back  ·  ? help  ·  q quit
           </Text>
         </Box>
       )}
