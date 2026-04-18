@@ -91,6 +91,19 @@ export default function TasksApp({ initialFilters }: Props) {
 
   const selectedTask = tasks[selectedIdx] ?? null;
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  const STATUS_TYPE_ORDER: Record<string, number> = { open: 0, custom: 1, closed: 2 };
+
+  function sortByStatus(tasks: ClickUpTask[]): ClickUpTask[] {
+    return [...tasks].sort((a, b) => {
+      const typeA = STATUS_TYPE_ORDER[a.status.type] ?? 1;
+      const typeB = STATUS_TYPE_ORDER[b.status.type] ?? 1;
+      if (typeA !== typeB) return typeA - typeB;
+      return a.status.orderindex - b.status.orderindex;
+    });
+  }
+
   // ── Fetch tasks ───────────────────────────────────────────────────────────
 
   const fetchTasks = useCallback(async (f: TaskFilters) => {
@@ -101,7 +114,7 @@ export default function TasksApp({ initialFilters }: Props) {
       const result = f.listId
         ? await getListTasks(f.listId, f)
         : await getTeamTasks(f);
-      setTasks(result);
+      setTasks(sortByStatus(result));
       setMode('split');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
