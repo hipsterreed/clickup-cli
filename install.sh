@@ -33,6 +33,7 @@ success "Node.js v$(node --version)"
 
 if [[ -d "${INSTALL_DIR}/.git" ]]; then
   info "Updating..."
+  git -C "${INSTALL_DIR}" reset --hard
   git -C "${INSTALL_DIR}" pull --ff-only
 else
   info "Cloning to ${INSTALL_DIR}..."
