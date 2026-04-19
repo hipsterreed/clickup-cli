@@ -466,8 +466,7 @@ setTasks(sortByStatus(result));
           <Box width="45%">
             <FilterPanel
               filters={filters}
-              lists={lists}
-              spaces={spaces}
+              taskStatuses={[...new Map(tasks.map((t) => [t.status.status, t.status])).values()]}
               onApply={handleFilterApply}
               onCancel={() => setMode('split')}
             />
