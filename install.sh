@@ -43,7 +43,10 @@ fi
 
 info "Installing dependencies..."
 cd "${INSTALL_DIR}"
-npm install --omit=dev --legacy-peer-deps || error "npm install failed."
+npm install --legacy-peer-deps || error "npm install failed."
+
+info "Building..."
+npm run build || error "Build failed."
 
 # ── Put clickup on PATH ───────────────────────────────────────────────────────
 
