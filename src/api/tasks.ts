@@ -89,6 +89,15 @@ export async function updateTaskStatus(
   return res.data;
 }
 
+export async function updateTaskParent(
+  taskId: string,
+  parentTaskId: string,
+): Promise<ClickUpTask> {
+  const client = createClient();
+  const res = await client.put<ClickUpTask>(`/task/${taskId}`, { parent: parentTaskId });
+  return res.data;
+}
+
 export interface CreateTaskInput {
   name: string;
   description?: string;

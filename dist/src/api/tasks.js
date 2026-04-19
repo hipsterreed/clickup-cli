@@ -58,6 +58,11 @@ export async function updateTaskStatus(taskId, status) {
     const res = await client.put(`/task/${taskId}`, { status });
     return res.data;
 }
+export async function updateTaskParent(taskId, parentTaskId) {
+    const client = createClient();
+    const res = await client.put(`/task/${taskId}`, { parent: parentTaskId });
+    return res.data;
+}
 export async function createTask(listId, input) {
     const client = createClient();
     const body = { name: input.name };

@@ -8,7 +8,7 @@ import { requireConfig } from '../src/utils/guards.js';
 import SetupApp from '../src/apps/SetupApp.js';
 import TasksApp from '../src/apps/TasksApp.js';
 import { QuickTaskList, QuickTaskDetail } from '../src/apps/QuickApp.js';
-import { getTeamTasks, getListTasks, getTask, updateTaskStatus, createTask } from '../src/api/tasks.js';
+import { getTeamTasks, getListTasks, getTask, updateTaskStatus, updateTaskParent, createTask } from '../src/api/tasks.js';
 import { getTaskComments, postComment } from '../src/api/comments.js';
 import { getSpaces } from '../src/api/spaces.js';
 import { getFolders } from '../src/api/folders.js';
@@ -230,6 +230,11 @@ UPDATING STATUS
 ---------------
   clickup tasks status <taskId> "new status" --json
   Output: <full task object> (same shape as above)
+
+SETTING A PARENT (make a task a subtask)
+-----------------------------------------
+  clickup tasks parent <taskId> <parentTaskId> --json
+  Output: <full task object> with parent field set to parentTaskId
 
 CREATING A TASK
 ---------------
@@ -615,6 +620,32 @@ tasks
                 ? { me: false }
                 : { me: true },
         }));
+    }
+});
+// tasks parent <taskId> <parentTaskId>
+tasks
+    .command('parent <taskId> <parentTaskId>')
+    .description('Make a task a subtask of another task')
+    .option('--json', 'Output updated task as JSON')
+    .action(async (taskId, parentTaskId, opts) => {
+    requireConfig();
+    try {
+        const updated = await updateTaskParent(taskId, parentTaskId);
+        if (opts.json) {
+            outputJson(taskToJson(updated));
+        }
+        else {
+            console.log(chalk.green(`✓ Task "${updated.name}" is now a subtask of ${parentTaskId}`));
+        }
+    }
+    catch (err) {
+        const msg = err instanceof Error ? err.message : 'Error';
+        if (opts.json)
+            outputJsonError(msg);
+        else {
+            console.error(chalk.red('✗ ' + msg));
+            process.exit(1);
+        }
     }
 });
 // tasks create
