@@ -76,12 +76,18 @@ export interface ClickUpTeam {
   members?: Array<{ user: ClickUpUser }>;
 }
 
+export interface RecentList {
+  id: string;
+  name: string;
+}
+
 export interface ClickUpConfig {
   apiToken: string;
   teamId: string;
   userId: number;
   username: string;
   email: string;
+  recentLists?: RecentList[];
 }
 
 export interface TaskFilters {

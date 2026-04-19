@@ -47,7 +47,7 @@ export async function getListTasks(
 
   const params: Record<string, unknown> = {
     'list_ids[]': [listId],
-    include_closed: filters.includeClosed ?? false,
+    include_closed: true,
     subtasks: filters.subtasks ?? false,
     order_by: filters.orderBy ?? 'updated',
     reverse: true,

@@ -1,0 +1,5 @@
+ready for dev → unstarted
+backlog → open
+completed → done
+shipped → done
+in development → custom

@@ -5,7 +5,7 @@ import type { ClickUpList, TaskFilters } from '../types/clickup.js';
 import { getSpaces } from '../api/spaces.js';
 import { getFolders } from '../api/folders.js';
 import { getListsInSpace, getListsInFolder } from '../api/lists.js';
-import { getConfig } from '../config/config.js';
+import { getConfig, getRecentLists, pushRecentList } from '../config/config.js';
 
 interface BrowseItem {
   type: 'scope' | 'list' | 'separator';
@@ -28,6 +28,7 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [idx, setIdx] = useState(0);
+  const recents = getRecentLists();
 
   useEffect(() => {
     let cancelled = false;
@@ -58,11 +59,20 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
             sublabel: spaceName,
             filters: { listId: list.id },
           }));
+          const recentItems: BrowseItem[] = getRecentLists().map((r) => ({
+            type: 'list' as const,
+            label: r.name,
+            sublabel: 'recent',
+            filters: { listId: r.id },
+          }));
           setItems([
             { type: 'scope', label: 'My Tasks', filters: { me: true } },
             { type: 'scope', label: 'All Team Tasks', filters: {} },
+            ...(recentItems.length > 0
+              ? [{ type: 'separator' as const, label: 'recent' }, ...recentItems]
+              : []),
             ...(listItems.length > 0
-              ? [{ type: 'separator' as const, label: '' }, ...listItems]
+              ? [{ type: 'separator' as const, label: 'lists' }, ...listItems]
               : []),
           ]);
           setLoading(false);
@@ -76,13 +86,15 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
   }, [teamId]);
 
   const q = query.toLowerCase();
-  const filtered = items.filter((item) => {
-    if (item.type === 'separator') return false;
-    if (!q) return true;
-    return item.label.toLowerCase().includes(q) || item.sublabel?.toLowerCase().includes(q);
-  });
+  const filtered = q
+    ? items.filter((item) => {
+        if (item.type === 'separator') return false;
+        return item.label.toLowerCase().includes(q) || item.sublabel?.toLowerCase().includes(q);
+      })
+    : items;
 
-  const visibleIdx = Math.min(idx, filtered.length - 1);
+  const selectableFiltered = filtered.filter((i) => i.type !== 'separator');
+  const visibleIdx = Math.min(idx, selectableFiltered.length - 1);
 
   useInput((input, key) => {
     if (key.escape) { onQuit(); return; }
@@ -90,10 +102,15 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
     if (key.upArrow) {
       setIdx((i) => Math.max(0, i - 1));
     } else if (key.downArrow) {
-      setIdx((i) => Math.min(filtered.length - 1, i + 1));
+      setIdx((i) => Math.min(selectableFiltered.length - 1, i + 1));
     } else if (key.return) {
-      const item = filtered[visibleIdx];
-      if (item?.filters) onSelect(item.filters, item.label);
+      const item = selectableFiltered[visibleIdx];
+      if (item?.filters) {
+        if (item.type === 'list' && item.filters.listId) {
+          pushRecentList({ id: item.filters.listId, name: item.label });
+        }
+        onSelect(item.filters, item.label);
+      }
     } else if (key.backspace || key.delete) {
       setQuery((q) => q.slice(0, -1));
       setIdx(0);
@@ -117,24 +134,35 @@ export default function BrowseScreen({ onSelect, onQuit }: Props) {
 
       {/* List */}
       <Box flexDirection="column" paddingX={1}>
-        {filtered.map((item, i) => {
-          const isSelected = i === visibleIdx;
-          return (
-            <Box key={`${item.type}-${item.label}-${i}`}>
-              <Text color={isSelected ? 'cyan' : 'gray'} bold={isSelected}>
-                {isSelected ? '▶ ' : '  '}
-              </Text>
-              <Text color={isSelected ? 'white' : 'gray'} bold={isSelected}>
-                {item.label}
-              </Text>
-              {item.sublabel && (
-                <Text color="gray">
-                  {'  '}{item.sublabel}
+        {(() => {
+          let selectableI = -1;
+          return filtered.map((item, i) => {
+            if (item.type === 'separator') {
+              return (
+                <Box key={`sep-${i}`} marginTop={1}>
+                  <Text color="gray">{'  ── '}{item.label}{' ──'}</Text>
+                </Box>
+              );
+            }
+            selectableI++;
+            const isSelected = selectableI === visibleIdx;
+            return (
+              <Box key={`${item.type}-${item.label}-${i}`}>
+                <Text color={isSelected ? 'cyan' : 'gray'} bold={isSelected}>
+                  {isSelected ? '▶ ' : '  '}
                 </Text>
-              )}
-            </Box>
-          );
-        })}
+                <Text color={isSelected ? 'white' : 'gray'} bold={isSelected}>
+                  {item.label}
+                </Text>
+                {item.sublabel && item.sublabel !== 'recent' && (
+                  <Text color="gray">
+                    {'  '}{item.sublabel}
+                  </Text>
+                )}
+              </Box>
+            );
+          });
+        })()}
 
         {loading && (
           <Box marginTop={1} paddingLeft={2}>

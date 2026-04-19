@@ -1,5 +1,5 @@
 import Conf from 'conf';
-import type { ClickUpConfig } from '../types/clickup.js';
+import type { ClickUpConfig, RecentList } from '../types/clickup.js';
 
 const store = new Conf<ClickUpConfig>({
   projectName: 'clickup-cli',
@@ -32,4 +32,14 @@ export function clearConfig(): void {
 
 export function getConfigPath(): string {
   return store.path;
+}
+
+export function pushRecentList(list: RecentList): void {
+  const prev = (store.get('recentLists') as RecentList[] | undefined) ?? [];
+  const next = [list, ...prev.filter((l) => l.id !== list.id)].slice(0, 2);
+  store.set('recentLists', next);
+}
+
+export function getRecentLists(): RecentList[] {
+  return (store.get('recentLists') as RecentList[] | undefined) ?? [];
 }

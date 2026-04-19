@@ -1,5 +1,5 @@
 import { Box, Text, useApp, useInput, useStdout } from 'ink';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Spinner from '../ui/Spinner.js';
 import TaskTable from '../ui/TaskTable.js';
 import TaskDetail from '../ui/TaskDetail.js';
@@ -56,12 +56,29 @@ export default function TasksApp({ initialFilters }: Props) {
   // 1 title bar + 1 blank gap + panels + 1 blank gap + 1 footer = 4 overhead rows
   // Each border box uses 2 rows (top+bottom border), panels share a row if side-by-side
   // Target: left panel inner height = right panel inner height = panelInnerHeight
-  const OVERHEAD = 6; // title(1) + gaps(2) + footer(1) + border top+bottom(2)
+  const OVERHEAD = 8; // title(1) + gaps(2) + footer(1) + border top+bottom(2) + bottom slack(2)
   const panelInnerHeight = Math.max(8, termRows - OVERHEAD);
-  // Table rows = panelInnerHeight - header row(1) - scroll indicator(1) - padding(1)
-  const tableRows = Math.max(4, panelInnerHeight - 3);
+  // Table rows = panelInnerHeight - header row(1) - progress bar(2) - padding(1)
+  const tableRows = Math.max(4, panelInnerHeight - 4);
 
   const { teamId } = getConfig();
+
+  // Synchronized output — tells the terminal to batch all writes into one atomic frame,
+  // preventing the partial-render flicker on Windows Terminal.
+  const syncEnabled = useRef(false);
+  useEffect(() => {
+    if (!syncEnabled.current) {
+      process.stdout.write('\x1b[?2026h');
+      syncEnabled.current = true;
+    }
+    return () => {
+      process.stdout.write('\x1b[?2026l');
+      syncEnabled.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    process.stdout.write('\x1b[?2026l\x1b[?2026h');
+  });
 
   const [mode, setMode] = useState<Mode>(initialFilters ? 'loading' : 'browse');
   const [scopeLabel, setScopeLabel] = useState('');
@@ -114,7 +131,7 @@ export default function TasksApp({ initialFilters }: Props) {
       const result = f.listId
         ? await getListTasks(f.listId, f)
         : await getTeamTasks(f);
-      setTasks(sortByStatus(result));
+setTasks(sortByStatus(result));
       setMode('split');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
@@ -327,7 +344,7 @@ export default function TasksApp({ initialFilters }: Props) {
   // Title bar content
   const canCreate = !!filters.listId;
   const titleRight = mode === 'split'
-    ? `m:${filters.me ? 'all' : 'mine'}  b:back  f:filter${canCreate ? '  n:new' : ''}  r:refresh  q:quit`
+    ? `m:${filters.me ? 'all' : 'me mode'}  b:back  f:filter${canCreate ? '  n:new' : ''}  r:refresh  q:quit`
     : mode === 'fullscreen'
       ? 'esc:back  s:status  c:comment  q:quit'
       : 'q:quit';

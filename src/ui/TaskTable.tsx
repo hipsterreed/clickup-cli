@@ -28,32 +28,34 @@ export default function TaskTable({
   const { userId } = getConfig();
   const [scrollOffset, setScrollOffset] = useState(0);
 
-  // Keep selection in view
-  useEffect(() => {
-    if (selectedIndex < scrollOffset) {
-      setScrollOffset(selectedIndex);
-    } else if (selectedIndex >= scrollOffset + height) {
-      setScrollOffset(selectedIndex - height + 1);
-    }
-  }, [selectedIndex, height]);
-
-  // Clamp scroll when tasks shrink
-  useEffect(() => {
-    if (scrollOffset > 0 && tasks.length <= height) {
-      setScrollOffset(0);
-    }
-  }, [tasks.length]);
-
   useInput(
     (_, key) => {
       if (key.upArrow) {
-        onSelect(Math.max(0, selectedIndex - 1));
+        const next = Math.max(0, selectedIndex - 1);
+        onSelect(next);
+        if (next < scrollOffset) setScrollOffset(next);
       } else if (key.downArrow) {
-        onSelect(Math.min(tasks.length - 1, selectedIndex + 1));
+        const next = Math.min(tasks.length - 1, selectedIndex + 1);
+        onSelect(next);
+        if (next >= scrollOffset + height) setScrollOffset(next - height + 1);
       }
     },
     { isActive: isFocused },
   );
+
+  // Clamp scroll when tasks list changes
+  useEffect(() => {
+    if (tasks.length <= height) setScrollOffset(0);
+  }, [tasks.length]);
+
+  // Progress bar
+  const barWidth = COL_TITLE + COL_STATUS + COL_ASSIGNEE + 2;
+  const doneTasks = tasks.filter((t) => t.status.type === 'closed' || t.status.type === 'done').length;
+  const pct = tasks.length > 0 ? Math.round((doneTasks / tasks.length) * 100) : 0;
+  const filled = tasks.length > 0 ? Math.round((doneTasks / tasks.length) * barWidth) : 0;
+  const progressFilled = '='.repeat(filled);
+  const progressEmpty = '-'.repeat(barWidth - filled);
+  const progressLabel = tasks.length > 0 ? `${pct}% complete  ·  ${doneTasks}/${tasks.length}` : '0 tasks';
 
   // Build exactly `height` display rows (pad with empty rows if needed)
   const visibleTasks = tasks.slice(scrollOffset, scrollOffset + height);
@@ -119,17 +121,15 @@ export default function TaskTable({
         </Box>
       ))}
 
-      {/* Scroll indicator — always 1 row */}
-      <Box>
-        {tasks.length > height ? (
-          <Text color="gray">
-            {'  '}{scrollOffset + 1}–{Math.min(scrollOffset + height, tasks.length)} of {tasks.length}
-          </Text>
-        ) : (
-          <Text color="gray">
-            {'  '}{tasks.length} task{tasks.length !== 1 ? 's' : ''}
-          </Text>
-        )}
+      {/* Progress bar — always 2 rows */}
+      <Box flexDirection="column">
+        <Box>
+          <Text color="green">{'  '}{progressFilled}</Text>
+          <Text color="gray">{progressEmpty}</Text>
+        </Box>
+        <Box>
+          <Text color="gray">{'  '}{progressLabel}</Text>
+        </Box>
       </Box>
     </Box>
   );
