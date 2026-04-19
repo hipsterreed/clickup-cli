@@ -57,7 +57,12 @@ function commentToJson(c) {
 program
     .command('help', { isDefault: false })
     .description('Show a full command and keybinding reference')
-    .action(() => {
+    .option('--llm', 'Output a plain-text JSON-mode reference for LLM consumption')
+    .action((opts) => {
+    if (opts.llm) {
+        printLlmHelp();
+        return;
+    }
     const c = chalk;
     const h = (s) => c.bold.cyan(s);
     const k = (s) => c.cyan(s.padEnd(36));
@@ -128,8 +133,125 @@ program
     console.log();
     console.log(c.gray('  Config is stored in your OS user config directory — never in this repo.'));
     console.log(c.gray('  For full flag docs: clickup <command> --help'));
+    console.log(c.gray('  For LLM/JSON mode reference: clickup help --llm'));
     console.log();
 });
+function printLlmHelp() {
+    const out = `
+ClickUp CLI — JSON Mode Reference for LLMs
+===========================================
+All commands below output clean JSON to stdout. Errors go to stderr as {"error":"<message>"}.
+Authentication is pre-configured; no credentials needed at runtime.
+
+DISCOVERY
+---------
+List all spaces (get space IDs):
+  clickup spaces --json
+  Output: [{ "id": string, "name": string }, ...]
+
+List all lists in the workspace (get list IDs):
+  clickup lists --json
+  Output: [{ "id": string, "name": string, "task_count": number|null,
+             "space": { "id": string, "name": string },
+             "folder": { "id": string, "name": string } | null }, ...]
+
+List lists scoped to a space:
+  clickup lists --space <spaceId> --json
+
+List lists scoped to a folder:
+  clickup lists --folder <folderId> --json
+
+QUERYING TASKS
+--------------
+Get tasks assigned to the current user:
+  clickup tasks --me --json
+
+Get tasks in a specific list:
+  clickup tasks --list <listId> --json
+
+Filter by status (repeatable):
+  clickup tasks --list <listId> --status "in progress" --status "in review" --json
+
+Filter by priority (1=urgent 2=high 3=normal 4=low, repeatable):
+  clickup tasks --list <listId> --priority 1 --priority 2 --json
+
+Include closed/done tasks:
+  clickup tasks --list <listId> --include-closed --json
+
+Limit results:
+  clickup tasks --me --limit 20 --json
+
+Sort order:
+  clickup tasks --me --order-by due_date --json   (created|updated|due_date)
+
+Task object shape:
+  {
+    "id": string,            // use this ID for view/comment/status commands
+    "name": string,
+    "status": string,        // e.g. "in progress", "in review", "done"
+    "priority": string|null, // "urgent"|"high"|"normal"|"low"|null
+    "assignees": [{ "id": number, "username": string }],
+    "list": { "id": string, "name": string },
+    "folder": { "id": string, "name": string } | null,
+    "due_date": string|null, // ISO 8601
+    "date_created": string,  // ISO 8601
+    "date_updated": string,  // ISO 8601
+    "url": string,
+    "description": string|null,
+    "tags": string[],
+    "parent": string|null    // parent task ID for subtasks
+  }
+
+VIEWING A TASK
+--------------
+Get full task details:
+  clickup tasks view <taskId> --json
+  Output: { "task": <task object>, "comments": [] }
+
+Get task with comments:
+  clickup tasks view <taskId> --comments --json
+  Output: { "task": <task object>, "comments": [<comment>, ...] }
+
+Comment object shape:
+  {
+    "id": string,
+    "text": string,
+    "author": { "id": number, "username": string },
+    "date": string,   // ISO 8601
+    "resolved": boolean
+  }
+
+POSTING A COMMENT
+-----------------
+  clickup tasks comment <taskId> -m "Your comment text here" --json
+  Output: { "success": true, "task_id": string }
+
+UPDATING STATUS
+---------------
+  clickup tasks status <taskId> "new status" --json
+  Output: <full task object> (same shape as above)
+
+CREATING A TASK
+---------------
+  clickup tasks create --list <listId> --name "Task title" --json
+  clickup tasks create --list <listId> --name "Task title" --desc "Details" --priority 2 --status "to do" --due 2026-05-01 --json
+  Output: <full task object>
+
+CURRENT USER
+------------
+  clickup whoami --json
+  Output: { "username": string, "email": string, "teamId": string, "userId": number }
+
+TYPICAL LLM WORKFLOW
+--------------------
+1. clickup lists --json                              # find the list ID you want
+2. clickup tasks --list <listId> --json              # browse tasks, note task IDs
+3. clickup tasks view <taskId> --comments --json     # read a task in full
+4. clickup tasks comment <taskId> -m "..." --json   # post a comment
+5. clickup tasks status <taskId> "in review" --json  # move a task
+`;
+    process.stdout.write(out.trimStart());
+}
 // ── setup ────────────────────────────────────────────────────────────────────
 program
     .command('setup')
