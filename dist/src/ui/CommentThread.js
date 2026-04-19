@@ -6,7 +6,7 @@ export default function CommentThread({ comments, maxHeight }) {
     const { userId } = getConfig();
     const visible = maxHeight ? comments.slice(-maxHeight) : comments;
     if (comments.length === 0) {
-        return (_jsxs(Box, { flexDirection: "column", children: [_jsx(Text, { bold: true, children: "Comments" }), _jsx(Text, { color: "gray", dimColor: true, children: "  No comments yet." })] }));
+        return (_jsxs(Box, { flexDirection: "column", children: [_jsx(Text, { bold: true, children: "Comments" }), _jsx(Text, { color: "gray", children: "  No comments yet." })] }));
     }
     return (_jsxs(Box, { flexDirection: "column", children: [_jsxs(Text, { bold: true, children: ["Comments (", comments.length, ")"] }), _jsx(Text, { color: "gray", children: '─'.repeat(50) }), visible.map((c) => {
                 const isMe = c.user.id === userId;

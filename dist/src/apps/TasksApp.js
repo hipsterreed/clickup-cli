@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { Box, Text, useApp, useInput, useStdout } from 'ink';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Spinner from '../ui/Spinner.js';
 import TaskTable from '../ui/TaskTable.js';
 import TaskDetail from '../ui/TaskDetail.js';
@@ -25,11 +25,27 @@ export default function TasksApp({ initialFilters }) {
     // 1 title bar + 1 blank gap + panels + 1 blank gap + 1 footer = 4 overhead rows
     // Each border box uses 2 rows (top+bottom border), panels share a row if side-by-side
     // Target: left panel inner height = right panel inner height = panelInnerHeight
-    const OVERHEAD = 6; // title(1) + gaps(2) + footer(1) + border top+bottom(2)
+    const OVERHEAD = 8; // title(1) + gaps(2) + footer(1) + border top+bottom(2) + bottom slack(2)
     const panelInnerHeight = Math.max(8, termRows - OVERHEAD);
-    // Table rows = panelInnerHeight - header row(1) - scroll indicator(1) - padding(1)
-    const tableRows = Math.max(4, panelInnerHeight - 3);
+    // Table rows = panelInnerHeight - header row(1) - progress bar(2) - padding(1)
+    const tableRows = Math.max(4, panelInnerHeight - 4);
     const { teamId } = getConfig();
+    // Synchronized output — tells the terminal to batch all writes into one atomic frame,
+    // preventing the partial-render flicker on Windows Terminal.
+    const syncEnabled = useRef(false);
+    useEffect(() => {
+        if (!syncEnabled.current) {
+            process.stdout.write('\x1b[?2026h');
+            syncEnabled.current = true;
+        }
+        return () => {
+            process.stdout.write('\x1b[?2026l');
+            syncEnabled.current = false;
+        };
+    }, []);
+    useEffect(() => {
+        process.stdout.write('\x1b[?2026l\x1b[?2026h');
+    });
     const [mode, setMode] = useState(initialFilters ? 'loading' : 'browse');
     const [scopeLabel, setScopeLabel] = useState('');
     const [tasks, setTasks] = useState([]);
@@ -51,6 +67,17 @@ export default function TasksApp({ initialFilters }) {
     // For action loading indicator
     const [actionMsg, setActionMsg] = useState('');
     const selectedTask = tasks[selectedIdx] ?? null;
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    const STATUS_TYPE_ORDER = { open: 0, custom: 1, closed: 2 };
+    function sortByStatus(tasks) {
+        return [...tasks].sort((a, b) => {
+            const typeA = STATUS_TYPE_ORDER[a.status.type] ?? 1;
+            const typeB = STATUS_TYPE_ORDER[b.status.type] ?? 1;
+            if (typeA !== typeB)
+                return typeA - typeB;
+            return a.status.orderindex - b.status.orderindex;
+        });
+    }
     // ── Fetch tasks ───────────────────────────────────────────────────────────
     const fetchTasks = useCallback(async (f) => {
         setMode('loading');
@@ -60,7 +87,7 @@ export default function TasksApp({ initialFilters }) {
             const result = f.listId
                 ? await getListTasks(f.listId, f)
                 : await getTeamTasks(f);
-            setTasks(result);
+            setTasks(sortByStatus(result));
             setMode('split');
         }
         catch (err) {
@@ -145,6 +172,11 @@ export default function TasksApp({ initialFilters }) {
             else if (input === 'f') {
                 fetchFilterData(); // lazy-load filter data
                 setMode('filter');
+            }
+            else if (input === 'm') {
+                const next = { ...filters, me: !filters.me };
+                setFilters(next);
+                fetchTasks(next);
             }
             else if (input === 'r') {
                 fetchTasks(filters);
@@ -277,17 +309,18 @@ export default function TasksApp({ initialFilters }) {
     // Title bar content
     const canCreate = !!filters.listId;
     const titleRight = mode === 'split'
-        ? `b:back  f:filter${canCreate ? '  n:new' : ''}  r:refresh  q:quit`
+        ? `m:${filters.me ? 'all' : 'me mode'}  b:back  f:filter${canCreate ? '  n:new' : ''}  r:refresh  q:quit`
         : mode === 'fullscreen'
             ? 'esc:back  s:status  c:comment  q:quit'
             : 'q:quit';
+    const meLabel = filters.me ? ' · me' : '';
     const titleLeft = mode === 'split' || mode === 'fullscreen'
-        ? `ClickUp · ${scopeLabel} · ${tasks.length} task${tasks.length !== 1 ? 's' : ''}`
+        ? `ClickUp · ${scopeLabel}${meLabel} · ${tasks.length} task${tasks.length !== 1 ? 's' : ''}`
         : 'ClickUp CLI';
     // ── Browse mode ───────────────────────────────────────────────────────────
     if (mode === 'browse') {
         return (_jsx(BrowseScreen, { onSelect: handleBrowseSelect, onQuit: exit }));
     }
     // ── Main layout (loading / split / fullscreen / overlays / error) ─────────
-    return (_jsxs(Box, { flexDirection: "column", children: [_jsxs(Box, { borderStyle: "round", borderColor: "cyan", paddingX: 1, children: [_jsx(Text, { bold: true, color: "cyan", children: titleLeft }), _jsxs(Text, { color: "gray", dimColor: true, children: ['  ·  ', titleRight] })] }), notice && (_jsx(Box, { paddingX: 1, children: _jsx(Text, { color: notice.type === 'success' ? 'green' : 'red', bold: true, children: notice.message }) })), actionMsg && (_jsx(Box, { paddingX: 1, children: _jsx(Spinner, { message: actionMsg }) })), mode === 'loading' && (_jsx(Box, { paddingX: 2, paddingY: 1, children: _jsx(Spinner, { message: "Fetching tasks..." }) })), mode === 'error' && (_jsxs(Box, { flexDirection: "column", paddingX: 2, paddingY: 1, children: [_jsxs(Text, { color: "red", children: ["\u2717 ", error] }), _jsx(Text, { color: "gray", dimColor: true, children: "Press Enter to retry  \u00B7  q to quit" })] })), mode === 'split' && (_jsxs(Box, { flexDirection: "row", children: [_jsx(Box, { flexDirection: "column", width: "40%", borderStyle: "round", borderColor: "gray", paddingX: 1, paddingY: 0, height: panelInnerHeight + 2, children: _jsx(TaskTable, { tasks: tasks, selectedIndex: selectedIdx, onSelect: setSelectedIdx, height: tableRows, isFocused: true }) }), _jsx(Box, { flexDirection: "column", flexGrow: 1, borderStyle: "round", borderColor: "gray", height: panelInnerHeight + 2, overflow: "hidden", children: _jsx(TaskDetail, { task: selectedTask, compact: true }) })] })), mode === 'status' && selectedTask && listStatuses.length > 0 && (_jsx(StatusPicker, { statuses: listStatuses, currentStatus: selectedTask.status.status, onConfirm: handleStatusConfirm, onCancel: () => setMode('split') })), mode === 'comment' && selectedTask && (_jsx(CommentInput, { onSubmit: handleCommentSubmit, onCancel: () => setMode(comments !== null ? 'fullscreen' : 'split') })), mode === 'filter' && (_jsxs(Box, { children: [_jsx(Box, { width: "45%", children: _jsx(FilterPanel, { filters: filters, lists: lists, spaces: spaces, onApply: handleFilterApply, onCancel: () => setMode('split') }) }), _jsx(Box, { flexGrow: 1, paddingLeft: 1, children: _jsx(TaskDetail, { task: selectedTask, compact: true }) })] })), mode === 'fullscreen' && selectedTask && (_jsx(Box, { flexDirection: "column", borderStyle: "round", borderColor: "cyan", height: panelInnerHeight + 2, overflow: "hidden", children: _jsx(TaskDetail, { task: selectedTask, compact: false, comments: comments ?? undefined, loadingComments: loadingComments }) })), mode === 'help' && (_jsx(HelpScreen, { onClose: () => setMode('split') })), mode === 'create' && (_jsx(CreateTaskForm, { listName: createListName, listStatuses: createListStatuses, onSubmit: handleCreateSubmit, onCancel: () => setMode('split') })), mode === 'split' && (_jsx(Box, { paddingX: 1, children: _jsx(Text, { color: "gray", dimColor: true, children: "\u2191\u2193 navigate  \u00B7  enter expand  \u00B7  n new  \u00B7  s status  \u00B7  c comment  \u00B7  f filter  \u00B7  b back  \u00B7  ? help  \u00B7  q quit" }) }))] }));
+    return (_jsxs(Box, { flexDirection: "column", children: [_jsxs(Box, { borderStyle: "round", borderColor: "cyan", paddingX: 1, children: [_jsx(Text, { bold: true, color: "cyan", children: titleLeft }), _jsxs(Text, { color: "gray", children: ['  ·  ', titleRight] })] }), notice && (_jsx(Box, { paddingX: 1, children: _jsx(Text, { color: notice.type === 'success' ? 'green' : 'red', bold: true, children: notice.message }) })), actionMsg && (_jsx(Box, { paddingX: 1, children: _jsx(Spinner, { message: actionMsg }) })), mode === 'loading' && (_jsx(Box, { paddingX: 2, paddingY: 1, children: _jsx(Spinner, { message: "Fetching tasks..." }) })), mode === 'error' && (_jsxs(Box, { flexDirection: "column", paddingX: 2, paddingY: 1, children: [_jsxs(Text, { color: "red", children: ["\u2717 ", error] }), _jsx(Text, { color: "gray", children: "Press Enter to retry  \u00B7  q to quit" })] })), mode === 'split' && (_jsxs(Box, { flexDirection: "row", children: [_jsx(Box, { flexDirection: "column", width: 71, flexShrink: 0, borderStyle: "round", borderColor: "gray", paddingX: 1, paddingY: 0, height: panelInnerHeight + 2, children: _jsx(TaskTable, { tasks: tasks, selectedIndex: selectedIdx, onSelect: setSelectedIdx, height: tableRows, isFocused: true }) }), _jsx(Box, { flexDirection: "column", flexGrow: 1, borderStyle: "round", borderColor: "gray", height: panelInnerHeight + 2, overflow: "hidden", children: _jsx(TaskDetail, { task: selectedTask, compact: true }) })] })), mode === 'status' && selectedTask && listStatuses.length > 0 && (_jsx(StatusPicker, { statuses: listStatuses, currentStatus: selectedTask.status.status, onConfirm: handleStatusConfirm, onCancel: () => setMode('split') })), mode === 'comment' && selectedTask && (_jsx(CommentInput, { onSubmit: handleCommentSubmit, onCancel: () => setMode(comments !== null ? 'fullscreen' : 'split') })), mode === 'filter' && (_jsxs(Box, { children: [_jsx(Box, { width: "45%", children: _jsx(FilterPanel, { filters: filters, taskStatuses: [...new Map(tasks.map((t) => [t.status.status, t.status])).values()], onApply: handleFilterApply, onCancel: () => setMode('split') }) }), _jsx(Box, { flexGrow: 1, paddingLeft: 1, children: _jsx(TaskDetail, { task: selectedTask, compact: true }) })] })), mode === 'fullscreen' && selectedTask && (_jsx(Box, { flexDirection: "column", borderStyle: "round", borderColor: "cyan", height: panelInnerHeight + 2, overflow: "hidden", children: _jsx(TaskDetail, { task: selectedTask, compact: false, comments: comments ?? undefined, loadingComments: loadingComments }) })), mode === 'help' && (_jsx(HelpScreen, { onClose: () => setMode('split') })), mode === 'create' && (_jsx(CreateTaskForm, { listName: createListName, listStatuses: createListStatuses, onSubmit: handleCreateSubmit, onCancel: () => setMode('split') })), mode === 'split' && (_jsx(Box, { paddingX: 1, children: _jsx(Text, { color: "gray", children: "\u2191\u2193 navigate  \u00B7  enter expand  \u00B7  m mine  \u00B7  n new  \u00B7  s status  \u00B7  c comment  \u00B7  f filter  \u00B7  b back  \u00B7  ? help  \u00B7  q quit" }) }))] }));
 }

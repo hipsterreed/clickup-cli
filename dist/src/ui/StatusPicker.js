@@ -34,6 +34,6 @@ export default function StatusPicker({ statuses, currentStatus, onConfirm, onCan
                 const isSelected = i === selectedIdx;
                 const isCurrent = s.status.toLowerCase() === currentStatus.toLowerCase();
                 const color = statusColorInk(s.status);
-                return (_jsxs(Box, { children: [_jsx(Text, { color: isSelected ? 'cyan' : 'gray', children: isSelected ? '▶ ' : '  ' }), _jsxs(Text, { color: flash && isSelected ? 'white' : color, bold: isSelected, inverse: flash && isSelected, children: ["\u25CF ", s.status] }), isCurrent && (_jsx(Text, { color: "gray", dimColor: true, children: "  \u2190 current" }))] }, s.status));
-            }), _jsx(Box, { marginTop: 1, children: _jsx(Text, { color: "gray", dimColor: true, children: "enter confirm  \u00B7  esc cancel" }) })] }));
+                return (_jsxs(Box, { children: [_jsx(Text, { color: isSelected ? 'cyan' : 'gray', children: isSelected ? '▶ ' : '  ' }), _jsxs(Text, { color: flash && isSelected ? 'white' : color, bold: isSelected, inverse: flash && isSelected, children: ["\u25CF ", s.status] }), isCurrent && (_jsx(Text, { color: "gray", children: "  \u2190 current" }))] }, s.status));
+            }), _jsx(Box, { marginTop: 1, children: _jsx(Text, { color: "gray", children: "enter confirm  \u00B7  esc cancel" }) })] }));
 }

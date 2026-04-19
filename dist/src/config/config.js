@@ -26,3 +26,11 @@ export function clearConfig() {
 export function getConfigPath() {
     return store.path;
 }
+export function pushRecentList(list) {
+    const prev = store.get('recentLists') ?? [];
+    const next = [list, ...prev.filter((l) => l.id !== list.id)].slice(0, 2);
+    store.set('recentLists', next);
+}
+export function getRecentLists() {
+    return store.get('recentLists') ?? [];
+}

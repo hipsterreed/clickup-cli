@@ -27,9 +27,10 @@ export async function getTeamTasks(filters) {
 }
 export async function getListTasks(listId, filters) {
     const client = createClient();
-    const { userId } = getConfig();
+    const { teamId, userId } = getConfig();
     const params = {
-        include_closed: filters.includeClosed ?? false,
+        'list_ids[]': [listId],
+        include_closed: true,
         subtasks: filters.subtasks ?? false,
         order_by: filters.orderBy ?? 'updated',
         reverse: true,
@@ -44,7 +45,7 @@ export async function getListTasks(listId, filters) {
     if (filters.priorities && filters.priorities.length > 0) {
         params['priorities[]'] = filters.priorities;
     }
-    const res = await client.get(`/list/${listId}/task`, { params });
+    const res = await client.get(`/team/${teamId}/task`, { params });
     return res.data.tasks;
 }
 export async function getTask(taskId) {
